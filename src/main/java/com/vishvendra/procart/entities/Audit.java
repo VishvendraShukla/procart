@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "p_user")
+@Table(name = "p_audit_logs")
 @Getter
 @Setter
 @Builder

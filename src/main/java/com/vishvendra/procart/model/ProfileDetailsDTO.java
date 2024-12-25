@@ -2,6 +2,9 @@ package com.vishvendra.procart.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,8 +20,13 @@ public class ProfileDetailsDTO extends AbstractDTO {
   private String firstName;
   private String middleName;
   private String lastName;
+  @Email
   private String email;
+  @Max(15)
+  @Min(10)
   private String phone;
+  @Max(15)
+  @Min(10)
   private String whatsApp;
   private String address;
   private String city;
