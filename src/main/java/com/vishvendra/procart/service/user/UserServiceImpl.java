@@ -4,6 +4,7 @@ import com.vishvendra.procart.entities.ProfileDetails;
 import com.vishvendra.procart.entities.User;
 import com.vishvendra.procart.exception.ResourceNotFoundException;
 import com.vishvendra.procart.mapper.UserMapper;
+import com.vishvendra.procart.model.ProfileDetailsDTO;
 import com.vishvendra.procart.model.UserDTO;
 import com.vishvendra.procart.repository.ProfileDetailsRepository;
 import com.vishvendra.procart.repository.UserRepository;
@@ -53,6 +54,24 @@ public class UserServiceImpl implements UserService {
             .create("Please check inputted data and try again",
                 String.format("User not found by username %s", username)));
     UserDTO response = this.userMapper.toDTO(userToReturn);
+    response.setPassword(null);
+    return response;
+  }
+
+  @Override
+  public UserDTO updateUser(Long userId, ProfileDetailsDTO profileDetailsDTO)
+      throws ResourceNotFoundException {
+    User existingUser = this.userRepository.findById(userId).orElseThrow(()
+        -> ResourceNotFoundException.create("Please check inputted data and try again",
+        String.format("User not found by id %s", userId)));
+
+    User updatedUser = this.userMapper.mergeProfileData(existingUser, profileDetailsDTO);
+    ProfileDetails profileDetails = this.profileDetailsRepository.save(
+        updatedUser.getProfileDetails());
+    updatedUser.setProfileDetails(profileDetails);
+
+    this.userRepository.save(updatedUser);
+    UserDTO response = this.userMapper.toDTO(updatedUser);
     response.setPassword(null);
     return response;
   }

@@ -5,6 +5,7 @@ import com.vishvendra.procart.entities.ProfileDetails;
 import com.vishvendra.procart.exception.ResourceNotFoundException;
 import com.vishvendra.procart.mapper.AdminMapper;
 import com.vishvendra.procart.model.AdminDTO;
+import com.vishvendra.procart.model.ProfileDetailsDTO;
 import com.vishvendra.procart.repository.AdminRepository;
 import com.vishvendra.procart.repository.ProfileDetailsRepository;
 import com.vishvendra.procart.utils.hash.HashService;
@@ -55,6 +56,24 @@ public class AdminServiceImpl implements AdminService {
             .create("Please check inputted data and try again",
                 String.format("Admin not found by username %s", username)));
     AdminDTO response = this.adminMapper.toDTO(adminToReturn);
+    response.setPassword(null);
+    return response;
+  }
+
+  @Override
+  public AdminDTO updateAdmin(Long adminId, ProfileDetailsDTO profileDetailsDTO)
+      throws ResourceNotFoundException {
+    Admin existingAdmin = this.adminRepository.findById(adminId).orElseThrow(()
+        -> ResourceNotFoundException.create("Please check inputted data and try again",
+        String.format("Admin not found by id %s", adminId)));
+
+    Admin updatedAdmin = this.adminMapper.mergeProfileData(existingAdmin, profileDetailsDTO);
+    ProfileDetails profileDetails = this.profileDetailsRepository.save(
+        updatedAdmin.getProfileDetails());
+    updatedAdmin.setProfileDetails(profileDetails);
+
+    this.adminRepository.save(updatedAdmin);
+    AdminDTO response = this.adminMapper.toDTO(updatedAdmin);
     response.setPassword(null);
     return response;
   }

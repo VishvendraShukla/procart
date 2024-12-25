@@ -29,7 +29,8 @@ public class SecurityConfig {
   };
 
   public static final String[] SECURED_URLS = {
-      "/api/v1/admin"
+      "/api/v1/admin",
+      "/api/v1/user"
   };
   private final CustomUserDetailsService userDetailsService;
 //  private final ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;

@@ -4,6 +4,7 @@ import com.vishvendra.procart.entities.ProfileDetails;
 import com.vishvendra.procart.entities.User;
 import com.vishvendra.procart.model.ProfileDetailsDTO;
 import com.vishvendra.procart.model.UserDTO;
+import java.util.Objects;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.NullValuePropertyMappingStrategy;
@@ -27,6 +28,18 @@ public interface UserMapper {
     }
     if (userDTO.getProfileDetailsDTO() != null) {
       ProfileDetails details = toEntity(userDTO.getProfileDetailsDTO());
+      existingUser.setProfileDetails(details);
+    }
+    return existingUser;
+  }
+
+  @Mapping(target = "profileDetails", ignore = true)
+  default User mergeProfileData(User existingUser, ProfileDetailsDTO profileDetailsDTO) {
+    if (Objects.nonNull(profileDetailsDTO)) {
+      ProfileDetails details = toEntity(profileDetailsDTO);
+      if (Objects.nonNull(profileDetailsDTO.getId())) {
+        details.setId(profileDetailsDTO.getId());
+      }
       existingUser.setProfileDetails(details);
     }
     return existingUser;

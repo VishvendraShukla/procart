@@ -22,7 +22,6 @@ public class UserDTO extends AbstractDTO {
   @NotNull
   @NotBlank
   private String username;
-  @NotNull
   private ProfileDetailsDTO profileDetailsDTO;
 
 }
