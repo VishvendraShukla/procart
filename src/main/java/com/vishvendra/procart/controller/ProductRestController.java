@@ -7,7 +7,6 @@ import com.vishvendra.procart.utils.response.ApiResponseSerializer;
 import com.vishvendra.procart.utils.response.Response;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

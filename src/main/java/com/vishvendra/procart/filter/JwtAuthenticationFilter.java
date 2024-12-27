@@ -8,7 +8,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -35,12 +34,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
       FilterChain chain) throws ServletException, IOException {
 
-//    String requestURI = request.getRequestURI();
-//    if (!requestURI.startsWith("/api/v1/user")) {
-//      chain.doFilter(request, response);
-//      return;
-//    }
-
     final String authorizationHeader = request.getHeader("Authorization");
     String jwt = null;
 
@@ -66,6 +59,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
     String uri = request.getRequestURI();
-    return !uri.matches("^/api/v1/user(/.*)?$");
+    if (uri.matches("^/api/v1/user(/.*)?$")) {
+      return request.getMethod().equalsIgnoreCase("POST");
+    }
+    return false;
   }
 }
