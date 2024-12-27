@@ -5,6 +5,8 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
@@ -21,6 +23,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@EnableAspectJAutoProxy
 public class SecurityConfig {
 
   public static final String[] PUBLIC_URLS = {
@@ -33,7 +36,6 @@ public class SecurityConfig {
       "/api/v1/user"
   };
   private final CustomUserDetailsService userDetailsService;
-//  private final ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
 //  private final LoggingFilter loggingFilter;
 
   @Bean
@@ -43,6 +45,8 @@ public class SecurityConfig {
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(PUBLIC_URLS)
             .permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/v1/user")
+            .permitAll()
             .requestMatchers(SECURED_URLS)
             .hasAnyRole("ADMIN", "USER")
             .anyRequest().authenticated()
@@ -51,6 +55,7 @@ public class SecurityConfig {
 //        .addFilterAfter(apiKeyAuthenticationFilter, BasicAuthenticationFilter.class)
         .authenticationProvider(authenticationProvider())
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .exceptionHandling(eh -> eh.accessDeniedHandler(new CustomAccessDeniedHandler()))
         .httpBasic(Customizer.withDefaults());
 
     return http.build();

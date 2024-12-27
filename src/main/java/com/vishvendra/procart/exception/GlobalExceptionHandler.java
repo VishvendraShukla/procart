@@ -45,7 +45,8 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(MissingServletRequestParameterException.class)
-  public ResponseEntity<Response> handleMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
+  public ResponseEntity<Response> handleMissingServletRequestParameterException(
+      MissingServletRequestParameterException ex) {
     log.error("MissingServletRequestParameterException: {}", ex.getMessage());
     return ApiResponseSerializer.errorResponseSerializerBuilder()
         .withMessage("Missing data in request.")

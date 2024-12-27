@@ -2,6 +2,7 @@ package com.vishvendra.procart.controller;
 
 import com.vishvendra.procart.model.ProfileDetailsDTO;
 import com.vishvendra.procart.model.UserDTO;
+import com.vishvendra.procart.permission.RequiresOwnership;
 import com.vishvendra.procart.service.user.UserService;
 import com.vishvendra.procart.utils.response.ApiResponseSerializer;
 import com.vishvendra.procart.utils.response.Response;
@@ -9,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +27,7 @@ public class UserRestController {
 
   private final UserService userService;
 
+  @RequiresOwnership(action = "VIEW", param = "username")
   @GetMapping
   public ResponseEntity<Response> getUserByUsername(
       @RequestParam("username") final String username) {
@@ -33,6 +36,7 @@ public class UserRestController {
         .withData(this.userService.retrieveByUsername(username)).build();
   }
 
+  @RequiresOwnership(action = "VIEW", param = "id")
   @GetMapping("/{id}")
   public ResponseEntity<Response> getUserById(@PathVariable final Long id) {
     return ApiResponseSerializer.successResponseSerializerBuilder()
@@ -47,6 +51,7 @@ public class UserRestController {
         .withData(this.userService.createUser(userDTO)).build();
   }
 
+  @RequiresOwnership(action = "UPDATE", param = "id")
   @PutMapping("/{id}")
   public ResponseEntity<Response> updateUser(@PathVariable final Long id,
       @Valid @RequestBody ProfileDetailsDTO profileDetailsDTO) {
