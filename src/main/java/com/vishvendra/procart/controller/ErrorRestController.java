@@ -2,8 +2,8 @@ package com.vishvendra.procart.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vishvendra.procart.exception.GlobalApplicationException;
 import com.vishvendra.procart.utils.response.ApiResponseSerializer;
-import com.vishvendra.procart.utils.response.ApiResponseSerializer.ErrorResponseBuilder;
 import com.vishvendra.procart.utils.response.Response;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
@@ -26,7 +26,6 @@ import org.springframework.web.context.request.WebRequest;
 @Slf4j
 public class ErrorRestController implements ErrorController {
 
-
   private final ErrorAttributes errorAttributes;
   private final ObjectMapper objectMapper;
 
@@ -34,7 +33,6 @@ public class ErrorRestController implements ErrorController {
   public ResponseEntity<Response> handleError(HttpServletRequest request) {
     Map<String, Object> errorDetails = getErrorAttributes(request);
     HttpStatus status = getStatus(request);
-    ErrorResponseBuilder builder = ApiResponseSerializer.errorResponseSerializerBuilder();
     JsonNode errorData = null;
     try {
       String errorDetailsJson = checkIfErrorIsFromFilterAndNeedsToHaveDifferentResponse(
@@ -42,20 +40,17 @@ public class ErrorRestController implements ErrorController {
       if (Objects.isNull(errorDetailsJson)) {
         errorDetailsJson = objectMapper.writeValueAsString(errorDetails);
         errorData = objectMapper.readTree(errorDetailsJson);
-        builder.withData(errorData);
         log.error("Error around filter: {}", errorData.toPrettyString());
       } else {
         log.error("Error occurred: {}", errorDetailsJson);
-        builder.withMessage(errorDetailsJson);
       }
     } catch (Exception e) {
       log.error("Error occurred, but failed to convert error details to JSON: {}", errorDetails, e);
-      return ApiResponseSerializer.errorResponseSerializerBuilder()
-          .withStatusCode(status)
-          .withMessage("An error occurred while processing the request.")
-          .build();
     }
-    return builder.build();
+    return ApiResponseSerializer.errorResponseSerializerBuilder()
+        .withStatusCode(status)
+        .withMessage("An error occurred while processing the request.")
+        .build();
   }
 
   private Map<String, Object> getErrorAttributes(HttpServletRequest request) {
@@ -64,8 +59,19 @@ public class ErrorRestController implements ErrorController {
         Include.EXCEPTION
     );
     WebRequest webRequest = new ServletWebRequest(request);
-    return errorAttributes.getErrorAttributes(webRequest, options);
+    Map<String, Object> errorAttributesMap = errorAttributes.getErrorAttributes(webRequest,
+        options);
+
+    Throwable error = errorAttributes.getError(webRequest);
+    if (error instanceof GlobalApplicationException exception) {
+      errorAttributesMap.put("displayMessage", exception.getDisplayMessage());
+      errorAttributesMap.put("errorMessageForLogging", exception.getErrorMessageForLogging());
+      errorAttributesMap.put("statusCode", exception.getStatusCode());
+    }
+
+    return errorAttributesMap;
   }
+
 
   private String checkIfErrorIsFromFilterAndNeedsToHaveDifferentResponse(
       Map<String, Object> errorDetails) {

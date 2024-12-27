@@ -11,6 +11,7 @@ import com.vishvendra.procart.repository.UserRepository;
 import com.vishvendra.procart.utils.hash.HashService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service("userService")
 @RequiredArgsConstructor
@@ -22,6 +23,7 @@ public class UserServiceImpl implements UserService {
   private final HashService hashService;
 
   @Override
+  @Transactional
   public UserDTO createUser(UserDTO userDTO) {
     User user = this.userMapper.toEntity(userDTO);
     user.setPassword(this.hashService.encodePassword(userDTO.getPassword()));
@@ -59,6 +61,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  @Transactional
   public UserDTO updateUser(Long userId, ProfileDetailsDTO profileDetailsDTO)
       throws ResourceNotFoundException {
     User existingUser = this.userRepository.findById(userId).orElseThrow(()

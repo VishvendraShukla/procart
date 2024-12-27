@@ -7,11 +7,16 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-//@Getter
-//@Setter
-//@AllArgsConstructor
-//@NoArgsConstructor
-//@JsonInclude(Include.NON_NULL)
-public class ProductCurrencyDTO {
+
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@JsonInclude(Include.NON_NULL)
+public class ProductCurrencyDTO extends AbstractDTO {
+
+  private String code;
+  private String symbol;
+  private String name;
 
 }

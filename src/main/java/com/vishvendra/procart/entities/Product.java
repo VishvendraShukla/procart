@@ -3,6 +3,7 @@ package com.vishvendra.procart.entities;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -30,10 +31,16 @@ public class Product extends AbstractEntity {
   private String description;
 
   @Column(name = "sku", unique = true, nullable = false)
-  private String SKU;
+  private String sku;
 
   @Column(name = "amount")
   private BigDecimal amount;
+
+  @Column(name = "image", columnDefinition = "BYTEA", nullable = true)
+  private byte[] image;
+
+  @Column(name = "image_url")
+  private String imageUrl;
 
   @OneToOne
   @JoinColumn(name = "currency_id")

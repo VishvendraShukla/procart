@@ -1,7 +1,9 @@
 package com.vishvendra.procart.config;
 
+import com.vishvendra.procart.filter.JwtAuthenticationFilter;
 import com.vishvendra.procart.filter.LoggingFilter;
 import com.vishvendra.procart.service.CustomUserDetailsService;
+import com.vishvendra.procart.utils.JwtTokenUtil;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -30,6 +32,7 @@ public class SecurityConfig {
 
   public static final String[] PUBLIC_URLS = {
       "/public/**",
+      "/api/v1/authenticate",
       "/error"
   };
 
@@ -45,6 +48,7 @@ public class SecurityConfig {
   };
   private final CustomUserDetailsService userDetailsService;
   private final LoggingFilter loggingFilter;
+  private final JwtTokenUtil jwtTokenUtil;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -62,6 +66,7 @@ public class SecurityConfig {
             .anyRequest().authenticated()
         )
         .addFilterBefore(loggingFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterBefore(new JwtAuthenticationFilter(userDetailsService, jwtTokenUtil, authenticationManager(http)),  UsernamePasswordAuthenticationFilter.class)
         .authenticationProvider(authenticationProvider())
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .exceptionHandling(eh -> eh.accessDeniedHandler(new CustomAccessDeniedHandler()))

@@ -8,6 +8,7 @@ import com.vishvendra.procart.utils.response.Response;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,7 +26,7 @@ public class AdminRestController {
 
   private final AdminService adminService;
 
-  @GetMapping
+  @GetMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<Response> getAdminByUsername(
       @RequestParam("username") final String username) {
     return ApiResponseSerializer.successResponseSerializerBuilder()
@@ -33,21 +34,21 @@ public class AdminRestController {
         .withData(this.adminService.retrieveByUsername(username)).build();
   }
 
-  @GetMapping("/{id}")
+  @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<Response> getAdmin(@PathVariable final Long id) {
     return ApiResponseSerializer.successResponseSerializerBuilder()
         .withStatusCode(HttpStatus.FOUND)
         .withData(this.adminService.get(id)).build();
   }
 
-  @PostMapping
+  @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<Response> createAdmin(@Valid @RequestBody AdminDTO adminDTO) {
     return ApiResponseSerializer.successResponseSerializerBuilder()
         .withStatusCode(HttpStatus.CREATED)
         .withData(this.adminService.createAdmin(adminDTO)).build();
   }
 
-  @PutMapping("/{id}")
+  @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<Response> updateAdmin(@PathVariable final Long id,
       @Valid @RequestBody ProfileDetailsDTO profileDetailsDTO) {
     return ApiResponseSerializer.successResponseSerializerBuilder()

@@ -8,6 +8,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -26,6 +27,10 @@ public class StartupRunner implements CommandLineRunner {
   private String password;
   @Value("${spring.datasource.driver-class-name}")
   private String className;
+  @Value("${JWT_SECRET_KEY:}")
+  private String jwtSecret;
+  @Value("${JWT_EXPIRATION_IN_MILLIS:3600000}")
+  private Long jwtSecretExpirationInMillis;
 
   public StartupRunner(AdminService adminService) {
     this.adminService = adminService;
@@ -33,6 +38,9 @@ public class StartupRunner implements CommandLineRunner {
 
   @Override
   public void run(String... args) throws Exception {
+    if (Objects.isNull(jwtSecret) || Objects.isNull(jwtSecretExpirationInMillis)) {
+      throw new Exception("Please set JWT_SECRET_KEY and JWT_EXPIRATION_IN_MILLIS");
+    }
     boolean isUserTableEmpty = false;
     boolean dbExists = false;
     String dbName = "procart";
