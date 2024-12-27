@@ -1,5 +1,6 @@
 package com.vishvendra.procart.config;
 
+import com.vishvendra.procart.filter.LoggingFilter;
 import com.vishvendra.procart.service.CustomUserDetailsService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -31,12 +33,18 @@ public class SecurityConfig {
       "/error"
   };
 
-  public static final String[] SECURED_URLS = {
+  public static final String[] USER_SPECIFIC_ROLE_URLS = {
+      "/api/v1/user",
+  };
+
+  public static final String[] ADMIN_SPECIFIC_ROLE_URLS = {
       "/api/v1/admin",
-      "/api/v1/user"
+      "/api/v1/product",
+      "/api/v1/inventory",
+      "/api/v1/productcurrency",
   };
   private final CustomUserDetailsService userDetailsService;
-//  private final LoggingFilter loggingFilter;
+  private final LoggingFilter loggingFilter;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -47,12 +55,13 @@ public class SecurityConfig {
             .permitAll()
             .requestMatchers(HttpMethod.POST, "/api/v1/user")
             .permitAll()
-            .requestMatchers(SECURED_URLS)
-            .hasAnyRole("ADMIN", "USER")
+            .requestMatchers(ADMIN_SPECIFIC_ROLE_URLS)
+            .hasRole("ADMIN")
+            .requestMatchers(USER_SPECIFIC_ROLE_URLS)
+            .hasRole("USER")
             .anyRequest().authenticated()
         )
-//        .addFilterBefore(loggingFilter, UsernamePasswordAuthenticationFilter.class)
-//        .addFilterAfter(apiKeyAuthenticationFilter, BasicAuthenticationFilter.class)
+        .addFilterBefore(loggingFilter, UsernamePasswordAuthenticationFilter.class)
         .authenticationProvider(authenticationProvider())
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .exceptionHandling(eh -> eh.accessDeniedHandler(new CustomAccessDeniedHandler()))
