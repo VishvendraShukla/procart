@@ -1,5 +1,6 @@
 package com.vishvendra.procart.controller;
 
+import com.vishvendra.procart.exception.AccessDeniedWrapperException;
 import com.vishvendra.procart.exception.BadCredentialsException;
 import com.vishvendra.procart.exception.ResourceNotFoundException;
 import com.vishvendra.procart.repository.UserRepository;
@@ -46,6 +47,7 @@ public class AuthenticationRestController {
       authenticationCheck = this.customAuthenticationProvider.authenticate(
           authentication);
     } catch (AuthenticationException e) {
+      log.error(e.getMessage(), e);
       throw BadCredentialsException.create("Unauthorized access.",
           String.format("User unauthenticated: %s", authenticateRequest.username));
     }
@@ -55,6 +57,11 @@ public class AuthenticationRestController {
     }
     log.info("User authenticated: {}", authenticateRequest.username);
     CustomUser principal = (CustomUser) authenticationCheck.getPrincipal();
+    if (principal.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+      throw AccessDeniedWrapperException.create("Unauthorized access.",
+          String.format("User is not allowed to access this resource: %s",
+              authenticateRequest.username));
+    }
     com.vishvendra.procart.entities.User user = this.userRepository.findByUsername(
             principal.getUsername())
         .orElseThrow(() -> ResourceNotFoundException.create("Unauthorized.",

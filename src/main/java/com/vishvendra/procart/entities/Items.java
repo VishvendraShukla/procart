@@ -17,11 +17,11 @@ import lombok.Setter;
 public class Items {
 
   @ManyToOne
-  @JoinColumn(name = "product_id") // Foreign key to Product
+  @JoinColumn(name = "product_id")
   private Product product;
 
-  private Long quantity;  // Quantity of the product in the cart
+  private Long quantity;
 
-  private BigDecimal price;  // Price of the product at the time of adding to the cart
+  private BigDecimal price;
 }
 

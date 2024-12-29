@@ -1,6 +1,7 @@
 package com.vishvendra.procart.config;
 
 import com.vishvendra.procart.filter.JwtAuthenticationFilter;
+import com.vishvendra.procart.filter.JwtAuthenticationProvider;
 import com.vishvendra.procart.filter.LoggingFilter;
 import com.vishvendra.procart.service.CustomUserDetailsService;
 import com.vishvendra.procart.utils.JwtTokenUtil;
@@ -38,17 +39,19 @@ public class SecurityConfig {
 
   public static final String[] USER_SPECIFIC_ROLE_URLS = {
       "/api/v1/user",
+      "/api/v1/cart",
   };
 
   public static final String[] ADMIN_SPECIFIC_ROLE_URLS = {
       "/api/v1/admin",
       "/api/v1/product",
       "/api/v1/inventory",
-      "/api/v1/productcurrency",
+      "/api/v1/currencies",
   };
   private final CustomUserDetailsService userDetailsService;
   private final LoggingFilter loggingFilter;
   private final JwtTokenUtil jwtTokenUtil;
+  private final JwtAuthenticationProvider jwtAuthenticationProvider;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -66,7 +69,8 @@ public class SecurityConfig {
             .anyRequest().authenticated()
         )
         .addFilterBefore(loggingFilter, UsernamePasswordAuthenticationFilter.class)
-        .addFilterBefore(new JwtAuthenticationFilter(userDetailsService, jwtTokenUtil, authenticationManager(http)),  UsernamePasswordAuthenticationFilter.class)
+        .addFilterBefore(new JwtAuthenticationFilter(authenticationManager(http), jwtTokenUtil),
+            UsernamePasswordAuthenticationFilter.class)
         .authenticationProvider(authenticationProvider())
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .exceptionHandling(eh -> eh.accessDeniedHandler(new CustomAccessDeniedHandler()))
@@ -79,6 +83,7 @@ public class SecurityConfig {
   public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
     return http.getSharedObject(AuthenticationManagerBuilder.class)
         .authenticationProvider(authenticationProvider())
+        .authenticationProvider(jwtAuthenticationProvider)
         .build();
   }
 

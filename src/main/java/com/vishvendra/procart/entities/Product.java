@@ -3,12 +3,9 @@ package com.vishvendra.procart.entities;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -33,8 +30,8 @@ public class Product extends AbstractEntity {
   @Column(name = "sku", unique = true, nullable = false)
   private String sku;
 
-  @Column(name = "amount")
-  private BigDecimal amount;
+  @Column(name = "price")
+  private BigDecimal price;
 
   @Column(name = "image", columnDefinition = "BYTEA", nullable = true)
   private byte[] image;
@@ -49,6 +46,4 @@ public class Product extends AbstractEntity {
   @Column(name = "quantity", nullable = false)
   private Long quantity;
 
-  @ManyToMany(mappedBy = "products")
-  private List<Cart> carts;
 }
