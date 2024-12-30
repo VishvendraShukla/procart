@@ -40,6 +40,7 @@ public class SecurityConfig {
   public static final String[] USER_SPECIFIC_ROLE_URLS = {
       "/api/v1/user",
       "/api/v1/cart",
+      "/api/v1/cart/complete",
   };
 
   public static final String[] ADMIN_SPECIFIC_ROLE_URLS = {

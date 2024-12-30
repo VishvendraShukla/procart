@@ -50,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
     String uri = request.getRequestURI();
-    if (uri.matches("/api/v1/cart")) {
+    if (uri.matches("/api/v1/cart") || uri.matches("/api/v1/cart/complete")) {
       return false;
     }
     if (uri.matches("^/api/v1/user(/.*)?$")) {

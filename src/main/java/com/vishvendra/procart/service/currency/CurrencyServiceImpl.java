@@ -1,11 +1,16 @@
 package com.vishvendra.procart.service.currency;
 
+import com.vishvendra.procart.entities.AuditAction;
 import com.vishvendra.procart.entities.ProductCurrency;
+import com.vishvendra.procart.event.AuditEvent;
+import com.vishvendra.procart.event.EventDispatcher;
 import com.vishvendra.procart.exception.ResourceNotFoundException;
 import com.vishvendra.procart.mapper.ProductCurrencyMapper;
 import com.vishvendra.procart.model.PageResultResponse;
 import com.vishvendra.procart.model.ProductCurrencyDTO;
 import com.vishvendra.procart.repository.CurrencyRepository;
+import com.vishvendra.procart.utils.PlatformSecurityContext;
+import com.vishvendra.procart.utils.securitymodel.CustomUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,12 +24,17 @@ public class CurrencyServiceImpl implements CurrencyService {
 
   private final CurrencyRepository currencyRepository;
   private final ProductCurrencyMapper productCurrencyMapper;
+  private final EventDispatcher eventDispatcher;
 
   @Override
   @Transactional
   public ProductCurrencyDTO createCurrency(ProductCurrencyDTO productCurrencyDTO) {
     ProductCurrency productCurrency = productCurrencyMapper.toEntity(productCurrencyDTO);
     ProductCurrency savedCurrency = currencyRepository.save(productCurrency);
+    CustomUser loggedUser = PlatformSecurityContext.getLoggedUser();
+    eventDispatcher.dispatchEvent(
+        new AuditEvent("Currency " + savedCurrency.getCode() + " created.",
+            loggedUser.getUsername(), AuditAction.CURRENCY_ADDED));
     return productCurrencyMapper.toDto(savedCurrency);
   }
 
@@ -54,6 +64,10 @@ public class CurrencyServiceImpl implements CurrencyService {
     existingCurrency.setCode(productCurrencyDTO.getCode());
     existingCurrency.setSymbol(productCurrencyDTO.getSymbol());
     ProductCurrency updatedCurrency = currencyRepository.save(existingCurrency);
+    CustomUser loggedUser = PlatformSecurityContext.getLoggedUser();
+    eventDispatcher.dispatchEvent(
+        new AuditEvent("Currency " + updatedCurrency.getCode() + " updated.",
+            loggedUser.getUsername(), AuditAction.CURRENCY_UPDATED));
     return productCurrencyMapper.toDto(updatedCurrency);
   }
 
@@ -64,6 +78,10 @@ public class CurrencyServiceImpl implements CurrencyService {
         .orElseThrow(() -> ResourceNotFoundException.create("Currency not found",
             "Currency not found with ID: " + id));
     currencyRepository.delete(currency);
+    CustomUser loggedUser = PlatformSecurityContext.getLoggedUser();
+    eventDispatcher.dispatchEvent(
+        new AuditEvent("Currency " + currency.getCode() + " deleted.",
+            loggedUser.getUsername(), AuditAction.CURRENCY_DELETED));
   }
 
   private PageResultResponse<ProductCurrencyDTO> mapToDTOList(Page<ProductCurrency> currencies) {

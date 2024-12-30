@@ -24,7 +24,7 @@ public class Audit extends AbstractEntity {
   @Column(name = "action", nullable = false)
   private AuditAction action;
   @Column(name = "performed_by", nullable = false)
-  private Long performedBy;
+  private String performedBy;
   @Column(name = "description")
   private String actionDescription;
 }

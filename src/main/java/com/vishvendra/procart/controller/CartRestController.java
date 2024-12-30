@@ -1,5 +1,6 @@
 package com.vishvendra.procart.controller;
 
+import com.vishvendra.procart.model.CompleteCartDTO;
 import com.vishvendra.procart.model.CreateCartDTO;
 import com.vishvendra.procart.model.UpdateCartDTO;
 import com.vishvendra.procart.service.cart.CartService;
@@ -34,5 +35,14 @@ public class CartRestController {
     return ApiResponseSerializer.successResponseSerializerBuilder()
         .withStatusCode(HttpStatus.OK)
         .withData(Map.of("cartId", this.cartService.addToCart(updateCartDTO))).build();
+  }
+
+  @PostMapping(value = "complete")
+  public ResponseEntity<Response> completeCart(@RequestBody CompleteCartDTO completeCartDTO) {
+    this.cartService.completeCart(completeCartDTO);
+    return ApiResponseSerializer.successResponseSerializerBuilder()
+        .withStatusCode(HttpStatus.OK)
+        .withMessage("Cart completed successfully")
+        .build();
   }
 }

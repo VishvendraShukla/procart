@@ -19,4 +19,6 @@ public interface InventoryService {
 
   boolean checkAvailableStock(Product product, Long quantity);
 
+  void releaseStock(Product product, Long quantity);
+
 }

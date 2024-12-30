@@ -1,5 +1,6 @@
 package com.vishvendra.procart.service.cart;
 
+import com.vishvendra.procart.model.CompleteCartDTO;
 import com.vishvendra.procart.model.CreateCartDTO;
 import com.vishvendra.procart.model.UpdateCartDTO;
 
@@ -9,4 +10,5 @@ public interface CartService {
 
   Long addToCart(UpdateCartDTO createCartDTO);
 
+  void completeCart(CompleteCartDTO completeCartDTO);
 }

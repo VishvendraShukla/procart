@@ -1,7 +1,10 @@
 package com.vishvendra.procart.service.inventory;
 
+import com.vishvendra.procart.entities.AuditAction;
 import com.vishvendra.procart.entities.Inventory;
 import com.vishvendra.procart.entities.Product;
+import com.vishvendra.procart.event.AuditEvent;
+import com.vishvendra.procart.event.EventDispatcher;
 import com.vishvendra.procart.exception.InsufficientStockException;
 import com.vishvendra.procart.exception.InventoryExistsException;
 import com.vishvendra.procart.exception.ResourceNotFoundException;
@@ -11,8 +14,9 @@ import com.vishvendra.procart.model.InventoryResponseDTO;
 import com.vishvendra.procart.model.PageResultResponse;
 import com.vishvendra.procart.repository.InventoryRepository;
 import com.vishvendra.procart.repository.ProductRepository;
+import com.vishvendra.procart.utils.PlatformSecurityContext;
+import com.vishvendra.procart.utils.securitymodel.CustomUser;
 import java.util.Objects;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +31,7 @@ public class InventoryServiceImpl implements InventoryService {
   private final InventoryRepository inventoryRepository;
   private final ProductRepository productRepository;
   private final InventoryMapper inventoryMapper;
+  private final EventDispatcher eventDispatcher;
 
   @Override
   public boolean checkAvailableStock(Product product, Long quantity) {
@@ -62,9 +67,14 @@ public class InventoryServiceImpl implements InventoryService {
     Inventory inventory = new Inventory();
     inventory.setProduct(product);
     inventory.setTotalStock(inventoryDTO.getQuantity());
-    inventory.setAvailableStock(0L);
+    inventory.setAvailableStock(inventoryDTO.getQuantity());
     inventory.setLockedStock(0L);
     inventoryRepository.save(inventory);
+    CustomUser loggedUser = PlatformSecurityContext.getLoggedUser();
+    eventDispatcher.dispatchEvent(
+        new AuditEvent("Inventory created for product: " + product.getName() + " with quantity: "
+            + inventoryDTO.getQuantity().toString(),
+            loggedUser.getUsername(), AuditAction.CREATE_INVENTORY));
   }
 
   @Override
@@ -95,6 +105,10 @@ public class InventoryServiceImpl implements InventoryService {
       inventory.setTotalStock(currentStock + inventoryDTO.getQuantity());
     }
     inventoryRepository.save(inventory);
+    CustomUser loggedUser = PlatformSecurityContext.getLoggedUser();
+    eventDispatcher.dispatchEvent(
+        new AuditEvent("Inventory updated for product: " + product.getName(),
+            loggedUser.getUsername(), AuditAction.UPDATE_INVENTORY));
   }
 
   @Override
@@ -114,20 +128,7 @@ public class InventoryServiceImpl implements InventoryService {
   }
 
   @Transactional
-  public void releaseStock(Product product, int quantity) {
-    Inventory inventory = inventoryRepository.findByProductWithLock(product);
-    if (inventory.getLockedStock() < quantity) {
-      throw InsufficientStockException.create(
-          "Sorry, we are currently out of " + product.getName(),
-          "Not enough locked stock for product: " + product.getName());
-    }
-    inventory.setLockedStock(inventory.getLockedStock() - quantity);
-    inventory.setAvailableStock(inventory.getAvailableStock() + quantity);
-    inventoryRepository.save(inventory);
-  }
-
-  @Transactional
-  public void finalizeInventoryAfterPayment(Product product, Long quantity) {
+  public void releaseStock(Product product, Long quantity) {
     Inventory inventory = inventoryRepository.findByProductWithLock(product);
     if (inventory.getLockedStock() < quantity) {
       throw InsufficientStockException.create(
@@ -137,16 +138,6 @@ public class InventoryServiceImpl implements InventoryService {
     inventory.setLockedStock(inventory.getLockedStock() - quantity);
     inventory.setTotalStock(inventory.getTotalStock() - quantity);
     inventoryRepository.save(inventory);
-  }
-
-  public Long getAvailableStock(Product product) {
-    Optional<Inventory> inventory = inventoryRepository.findByProduct(product);
-    return inventory.isPresent() ? inventory.get().getAvailableStock() : 0L;
-  }
-
-  public Long getLockedStock(Product product) {
-    Optional<Inventory> inventory = inventoryRepository.findByProduct(product);
-    return inventory.isPresent() ? inventory.get().getLockedStock() : 0L;
   }
 
   private Product findProductByIdOrThrowException(Long productId) {

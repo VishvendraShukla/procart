@@ -1,20 +1,25 @@
 package com.vishvendra.procart.service.cart;
 
+import com.vishvendra.procart.entities.AuditAction;
 import com.vishvendra.procart.entities.Cart;
 import com.vishvendra.procart.entities.CartStatus;
 import com.vishvendra.procart.entities.Items;
 import com.vishvendra.procart.entities.Product;
 import com.vishvendra.procart.entities.User;
+import com.vishvendra.procart.event.AuditEvent;
+import com.vishvendra.procart.event.EventDispatcher;
 import com.vishvendra.procart.exception.CartAlreadyActiveException;
 import com.vishvendra.procart.exception.InsufficientStockException;
 import com.vishvendra.procart.exception.ResourceNotFoundException;
 import com.vishvendra.procart.model.CartData;
+import com.vishvendra.procart.model.CompleteCartDTO;
 import com.vishvendra.procart.model.CreateCartDTO;
 import com.vishvendra.procart.model.UpdateCartDTO;
 import com.vishvendra.procart.repository.CartRepository;
 import com.vishvendra.procart.repository.ProductRepository;
 import com.vishvendra.procart.repository.UserRepository;
 import com.vishvendra.procart.service.inventory.InventoryService;
+import com.vishvendra.procart.utils.PlatformSecurityContext;
 import com.vishvendra.procart.utils.securitymodel.CustomUser;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -22,7 +27,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,9 +35,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class CartServiceImpl implements CartService {
 
   private final InventoryService inventoryService;
-
+  private final EventDispatcher eventDispatcher;
   private final CartRepository cartRepository;
-
   private final ProductRepository productRepository;
   private final UserRepository userRepository;
 
@@ -64,7 +67,11 @@ public class CartServiceImpl implements CartService {
     cart.setItems(List.of(item));
     cart.setTotalPrice(BigDecimal.valueOf(createCartDTO.getQuantity())
         .multiply(returnValues.getProduct().getPrice()));
-    return cartRepository.save(cart).getId();
+    Cart savedCart = cartRepository.save(cart);
+    eventDispatcher.dispatchEvent(
+        new AuditEvent("Cart Created", returnValues.getUser().getUsername(),
+            AuditAction.CREATE_CART));
+    return savedCart.getId();
   }
 
   @Override
@@ -75,18 +82,35 @@ public class CartServiceImpl implements CartService {
         updateCartDTO.getQuantity()).getId();
   }
 
+  @Override
+  public void completeCart(CompleteCartDTO completeCartDTO) {
+    User user = findLoggedUser();
+    Cart cart = cartRepository.findActiveCartByUser(user, CartStatus.ACTIVE).orElseThrow(()
+        -> ResourceNotFoundException.create("Cart not found",
+        String.format("Cart not found for user: %s", user.getId()))
+    );
+    cart.setCartStatus(CartStatus.COMPLETED);
+    cart.getItems()
+        .forEach(item -> inventoryService.releaseStock(item.getProduct(), item.getQuantity()));
+    cartRepository.save(cart);
+    eventDispatcher.dispatchEvent(
+        new AuditEvent("Cart completed", user.getUsername(), AuditAction.CART_COMPLETE));
+  }
+
 
   private CartData validateDataAndReturnValues(CreateCartDTO createCartDTO) {
     Product product = productRepository.findById(createCartDTO.getProductId()).orElseThrow(()
         -> ResourceNotFoundException.create("Product not found",
         String.format("Product with ID: %s not found", createCartDTO.getProductId())));
-    CustomUser customUser = (CustomUser) SecurityContextHolder.getContext().getAuthentication()
-        .getPrincipal();
-    User user = userRepository.findById(customUser.getUserId())
+    return new CartData(product, findLoggedUser());
+  }
+
+  private User findLoggedUser() {
+    CustomUser customUser = PlatformSecurityContext.getLoggedUser();
+    return userRepository.findById(customUser.getUserId())
         .orElseThrow(() -> ResourceNotFoundException.create(
             "User not found",
             String.format("User with ID: %s not found", customUser.getUserId())));
-    return new CartData(product, user);
   }
 
   public Cart addToCart(User user, Product product, Long quantity) {
@@ -95,7 +119,8 @@ public class CartServiceImpl implements CartService {
           "Sorry, we are currently out of " + product.getName(),
           "Not enough locked stock for product: " + product.getName());
     }
-
+    AuditAction auditAction = AuditAction.CART_UPDATE;
+    String message = "Cart updated";
     inventoryService.reserveStock(product, quantity);
 
     Cart cart = cartRepository.findActiveCartByUser(user, CartStatus.ACTIVE).orElse(null);
@@ -104,6 +129,8 @@ public class CartServiceImpl implements CartService {
       cart.setUser(user);
       cart.setItems(new ArrayList<>());
       cart.setCartStatus(CartStatus.ACTIVE);
+      auditAction = AuditAction.CREATE_CART;
+      message = "Cart created";
       cartRepository.save(cart);
     }
 
@@ -125,8 +152,10 @@ public class CartServiceImpl implements CartService {
     cart.setTotalPrice(cart.getItems().stream()
         .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
         .reduce(BigDecimal.ZERO, BigDecimal::add));
-
-    return cartRepository.save(cart);
+    Cart savedCart = cartRepository.save(cart);
+    eventDispatcher.dispatchEvent(
+        new AuditEvent(message, user.getUsername(), auditAction));
+    return savedCart;
   }
 }
 
