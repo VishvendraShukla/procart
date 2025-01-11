@@ -1,16 +1,21 @@
 package com.vishvendra.procart.service.product;
 
 import com.vishvendra.procart.entities.AuditAction;
+import com.vishvendra.procart.entities.Charge;
+import com.vishvendra.procart.entities.ChargeAppliesOn;
 import com.vishvendra.procart.entities.Product;
 import com.vishvendra.procart.entities.ProductCurrency;
 import com.vishvendra.procart.event.AuditEvent;
 import com.vishvendra.procart.event.EventDispatcher;
+import com.vishvendra.procart.exception.IllegalInputException;
 import com.vishvendra.procart.exception.ResourceNotFoundException;
 import com.vishvendra.procart.mapper.ProductMapper;
 import com.vishvendra.procart.model.PageResultResponse;
 import com.vishvendra.procart.model.ProductDTO;
+import com.vishvendra.procart.repository.ChargeRepository;
 import com.vishvendra.procart.repository.CurrencyRepository;
 import com.vishvendra.procart.repository.ProductRepository;
+import com.vishvendra.procart.service.charge.ChargeCalculationService;
 import com.vishvendra.procart.utils.PlatformSecurityContext;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +33,8 @@ public class ProductServiceImpl implements ProductService {
   private final CurrencyRepository currencyRepository;
   private final ProductMapper productMapper;
   private final EventDispatcher eventDispatcher;
+  private final ChargeRepository chargeRepository;
+  private final ChargeCalculationService chargeCalculationService;
 
   @Override
   @Transactional
@@ -39,7 +46,7 @@ public class ProductServiceImpl implements ProductService {
     product.setCurrency(currency);
     product.setImage(null);
     productRepository.save(product);
-//    handleEvent("Product " + product.getName() + " created.", AuditAction.ADD_PRODUCT);
+    handleEvent("Product " + product.getName() + " created.", AuditAction.ADD_PRODUCT);
     return productMapper.toResponseDTO(product);
   }
 
@@ -73,16 +80,44 @@ public class ProductServiceImpl implements ProductService {
     handleEvent("Product " + product.getName() + " deleted.", AuditAction.DELETE_PRODUCT);
   }
 
+  @Override
+  @Transactional
+  public void associateCharge(Long productId, Long chargeId) {
+    Product product = productRepository.findById(productId)
+        .orElseThrow(() -> ResourceNotFoundException.create("Product not found",
+            String.format("Product with ID: %s not found", productId)));
+
+    Charge charge = chargeRepository.findById(chargeId)
+        .orElseThrow(() -> ResourceNotFoundException.create("Charge not found",
+            String.format("Charge with ID: %s not found", chargeId)));
+    if (charge.getChargeAppliesOn().equals(ChargeAppliesOn.TRANSACTION)) {
+      throw IllegalInputException.create("Invalid input values",
+          String.format("Charge with ID: %s cannot be associated with product %s", charge.getId(),
+              product.getName()));
+    }
+    product.getCharges().add(charge);
+    productRepository.save(product);
+    handleEvent(
+        "Charge with ID: " + charge.getId() + " associated with product " + product.getName(),
+        AuditAction.ASSOCIATE_CHARGE);
+  }
+
 
   private PageResultResponse<ProductDTO> mapToDTOList(Page<Product> products) {
-    return PageResultResponse.of(
+    PageResultResponse<ProductDTO> pageResultProduct = PageResultResponse.of(
         products.map(productMapper::toResponseDTO).toList(),
         products.getSize(),
         products.getTotalElements(),
         products.getNumber(), products.isLast());
+
+    pageResultProduct.getElements().forEach(productDTO -> {
+      productDTO.setCalculatedPrice(
+          chargeCalculationService.calculate(productMapper.toEntity(productDTO)));
+    });
+    return pageResultProduct;
   }
 
-  private Product handleUpdate(Product existingpProduct, ProductDTO productDTO) {
+  private void handleUpdate(Product existingpProduct, ProductDTO productDTO) {
     if (Objects.nonNull(productDTO.getName()) && !productDTO.getName()
         .equals(existingpProduct.getName())) {
       existingpProduct.setName(productDTO.getName());
@@ -110,7 +145,6 @@ public class ProductServiceImpl implements ProductService {
               String.format("Currency: %s not found", productDTO.getCurrency().getName())));
       existingpProduct.setCurrency(newCurrency);
     }
-    return existingpProduct;
   }
 
   private void handleEvent(String message, AuditAction auditAction) {

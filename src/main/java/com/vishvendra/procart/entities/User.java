@@ -33,4 +33,7 @@ public class User extends AbstractEntity {
   private ProfileDetails profileDetails;
   @OneToMany(mappedBy = "user")
   private List<Cart> carts;
+  @OneToOne
+  @JoinColumn(name = "address_id")
+  private Address address;
 }

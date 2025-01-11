@@ -15,4 +15,6 @@ public interface ProductService {
 
   void deleteProduct(Long id);
 
+  void associateCharge(Long productId, Long chargeId);
+
 }

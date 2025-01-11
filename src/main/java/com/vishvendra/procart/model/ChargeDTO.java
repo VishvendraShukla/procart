@@ -2,8 +2,7 @@ package com.vishvendra.procart.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import java.math.BigDecimal;
-import java.util.List;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,16 +13,17 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonInclude(Include.NON_NULL)
-public class ProductDTO extends AbstractDTO {
+public class ChargeDTO extends AbstractDTO {
 
-  private String name;
+  @NotNull
+  private String chargeType;
+  @NotNull
+  private String chargeAmountType;
+  @NotNull
+  private String chargeAppliesOn;
+  @NotNull
+  private String amount;
   private String description;
-  private String sku;
-  private BigDecimal price;
-  private String imageUrl;
-  private Long quantity;
-  private BigDecimal calculatedPrice;
-  private ProductCurrencyDTO currency;
-  private List<ChargeDTO> charges;
+  private String displayName;
 
 }

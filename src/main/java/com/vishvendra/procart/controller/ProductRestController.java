@@ -39,6 +39,18 @@ public class ProductRestController {
         .build();
   }
 
+  @PostMapping(value = "{productId}/charge/{chargeId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<Response> associateCharge(
+      @PathVariable final Long productId,
+      @PathVariable final Long chargeId) {
+    productService.associateCharge(productId, chargeId);
+    return ApiResponseSerializer
+        .successResponseSerializerBuilder()
+        .withMessage("Charge associated successfully.")
+        .withStatusCode(HttpStatus.OK)
+        .build();
+  }
+
   @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<Response> fetchProducts(
       @RequestParam(required = false) Long id,

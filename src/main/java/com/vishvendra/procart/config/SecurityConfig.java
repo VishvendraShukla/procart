@@ -47,6 +47,7 @@ public class SecurityConfig {
       "/api/v1/admin",
       "/api/v1/product",
       "/api/v1/inventory",
+      "/api/v1/charge",
       "/api/v1/currencies",
   };
   private final CustomUserDetailsService userDetailsService;
