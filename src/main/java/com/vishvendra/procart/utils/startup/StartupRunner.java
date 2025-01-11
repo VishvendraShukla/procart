@@ -1,8 +1,15 @@
 package com.vishvendra.procart.utils.startup;
 
+import com.vishvendra.procart.entities.ProductCurrency;
 import com.vishvendra.procart.model.AdminDTO;
+import com.vishvendra.procart.model.InventoryDTO;
+import com.vishvendra.procart.model.ProductDTO;
 import com.vishvendra.procart.model.ProfileDetailsDTO;
+import com.vishvendra.procart.repository.CurrencyRepository;
 import com.vishvendra.procart.service.AdminService;
+import com.vishvendra.procart.service.inventory.InventoryService;
+import com.vishvendra.procart.service.product.ProductService;
+import com.vishvendra.procart.service.user.UserService;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -19,6 +26,10 @@ import org.springframework.stereotype.Component;
 public class StartupRunner implements CommandLineRunner {
 
   private final AdminService adminService;
+  private final ProductService productService;
+  private final CurrencyRepository currencyRepository;
+  private final UserService userService;
+  private final InventoryService inventoryService;
   @Value("${spring.datasource.url}")
   private String dbUrl;
   @Value("${spring.datasource.username}")
@@ -31,9 +42,17 @@ public class StartupRunner implements CommandLineRunner {
   private String jwtSecret;
   @Value("${JWT_EXPIRATION_IN_MILLIS:3600000}")
   private Long jwtSecretExpirationInMillis;
+  @Value("${CREATE_MOCK_UP_DATA:false}")
+  private Boolean createMockupData;
 
-  public StartupRunner(AdminService adminService) {
+  public StartupRunner(AdminService adminService, ProductService productService,
+      CurrencyRepository currencyRepository, UserService userService,
+      InventoryService inventoryService) {
     this.adminService = adminService;
+    this.productService = productService;
+    this.currencyRepository = currencyRepository;
+    this.userService = userService;
+    this.inventoryService = inventoryService;
   }
 
   @Override
@@ -62,6 +81,20 @@ public class StartupRunner implements CommandLineRunner {
       if (dbExists && isUserTableEmpty) {
         log.info("Admin table is empty, creating an admin");
         this.adminService.createAdmin(createDumbAdmin());
+        if (createMockupData) {
+          ProductCurrency productCurrency = this.currencyRepository.save(ProductCurrency.builder()
+              .code("USD")
+              .decimalPrecision(2.0)
+              .name("US Dollar")
+              .symbol("$")
+              .build());
+          for (int i = 0; i < 50; i++) {
+            ProductDTO product = this.productService.createProduct(
+                ProductGenerator.generateProductDTO(productCurrency.getId()));
+            this.userService.createUser(UserGenerator.createRandomUser());
+            this.inventoryService.create(new InventoryDTO(product.getId(), 100L));
+          }
+        }
       }
     } catch (Exception e) {
       log.error(e.getMessage());

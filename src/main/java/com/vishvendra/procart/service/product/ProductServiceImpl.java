@@ -39,7 +39,7 @@ public class ProductServiceImpl implements ProductService {
     product.setCurrency(currency);
     product.setImage(null);
     productRepository.save(product);
-    handleEvent("Product " + product.getName() + " created.", AuditAction.ADD_PRODUCT);
+//    handleEvent("Product " + product.getName() + " created.", AuditAction.ADD_PRODUCT);
     return productMapper.toResponseDTO(product);
   }
 

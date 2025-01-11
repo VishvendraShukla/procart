@@ -3,7 +3,7 @@ package com.vishvendra.procart.entities;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
@@ -39,7 +39,7 @@ public class Product extends AbstractEntity {
   @Column(name = "image_url")
   private String imageUrl;
 
-  @OneToOne
+  @ManyToOne
   @JoinColumn(name = "currency_id")
   private ProductCurrency currency;
 
