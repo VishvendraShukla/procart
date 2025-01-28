@@ -8,6 +8,7 @@ import com.vishvendra.procart.repository.AuditEventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 @Service("auditService")
@@ -24,7 +25,12 @@ public class AuditServiceImpl implements AuditService {
 
   @Override
   public PageResultResponse<AuditLogsDTO> getAuditLogs(PageRequest pageRequest) {
-    Page<Audit> auditLogs = auditEventRepository.findAll(pageRequest);
+    PageRequest sortedPageRequest = PageRequest.of(
+        pageRequest.getPageNumber(),
+        pageRequest.getPageSize(),
+        Sort.by(Sort.Direction.DESC, "createdAt")
+    );
+    Page<Audit> auditLogs = auditEventRepository.findAll(sortedPageRequest);
     return mapToDTOList(auditLogs);
   }
 
