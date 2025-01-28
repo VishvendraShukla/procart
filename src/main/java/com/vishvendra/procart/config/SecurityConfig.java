@@ -44,7 +44,8 @@ public class SecurityConfig {
   public static final String[] ADMIN_SPECIFIC_ROLE_URLS = {
       "/api/v1/admin",
       "/api/v1/products",
-      "api/v1/dashboard",
+      "/api/v1/dashboard",
+      "/api/v1/auditlogs",
       "/api/v1/inventories",
       "/api/v1/charge",
       "/api/v1/currencies",
