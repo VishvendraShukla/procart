@@ -31,7 +31,7 @@ public class UserRestController {
   public ResponseEntity<Response> getUserByUsername(
       @RequestParam("username") final String username) {
     return ApiResponseSerializer.successResponseSerializerBuilder()
-        .withStatusCode(HttpStatus.FOUND)
+        .withStatusCode(HttpStatus.OK)
         .withData(this.userService.retrieveByUsername(username)).build();
   }
 
@@ -39,7 +39,7 @@ public class UserRestController {
   @GetMapping("/{id}")
   public ResponseEntity<Response> getUserById(@PathVariable final Long id) {
     return ApiResponseSerializer.successResponseSerializerBuilder()
-        .withStatusCode(HttpStatus.FOUND)
+        .withStatusCode(HttpStatus.OK)
         .withData(this.userService.get(id)).build();
   }
 

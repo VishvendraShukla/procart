@@ -26,4 +26,8 @@ public class ChargeSpecifications {
     };
   }
 
+  public static Specification<Charge> isDeletedFalse() {
+    return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("deleted"), false);
+  }
+
 }

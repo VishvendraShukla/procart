@@ -42,6 +42,9 @@ public class ErrorRestController implements ErrorController {
         errorData = objectMapper.readTree(errorDetailsJson);
         log.error("Error around filter: {}", errorData.toPrettyString());
       } else {
+        errorDetailsJson = objectMapper.writeValueAsString(errorDetails);
+        errorData = objectMapper.readTree(errorDetailsJson);
+        status = HttpStatus.resolve(errorData.get("statusCode").intValue());
         log.error("Error occurred: {}", errorDetailsJson);
       }
     } catch (Exception e) {
@@ -79,6 +82,11 @@ public class ErrorRestController implements ErrorController {
       String exceptionType = errorDetails.get("exception").toString();
       if (exceptionType.contains("ResourceNotFoundException")) {
         return "An unexpected error occurred. Please try again later.";
+      }
+      if (exceptionType.contains("AccessDeniedException") || exceptionType.contains(
+          "AuthenticationException")
+          || exceptionType.contains("BadCredentialsException")) {
+        return "Unauthorized access.";
       }
     }
     return null;

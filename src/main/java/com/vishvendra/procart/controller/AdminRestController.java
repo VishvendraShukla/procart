@@ -30,14 +30,14 @@ public class AdminRestController {
   public ResponseEntity<Response> getAdminByUsername(
       @RequestParam("username") final String username) {
     return ApiResponseSerializer.successResponseSerializerBuilder()
-        .withStatusCode(HttpStatus.FOUND)
+        .withStatusCode(HttpStatus.OK)
         .withData(this.adminService.retrieveByUsername(username)).build();
   }
 
   @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<Response> getAdmin(@PathVariable final Long id) {
     return ApiResponseSerializer.successResponseSerializerBuilder()
-        .withStatusCode(HttpStatus.FOUND)
+        .withStatusCode(HttpStatus.OK)
         .withData(this.adminService.get(id)).build();
   }
 

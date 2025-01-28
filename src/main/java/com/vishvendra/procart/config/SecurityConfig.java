@@ -3,8 +3,6 @@ package com.vishvendra.procart.config;
 import com.vishvendra.procart.filter.JwtAuthenticationFilter;
 import com.vishvendra.procart.filter.JwtAuthenticationProvider;
 import com.vishvendra.procart.filter.LoggingFilter;
-import com.vishvendra.procart.service.CustomUserDetailsService;
-import com.vishvendra.procart.utils.JwtTokenUtil;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -12,13 +10,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -45,20 +43,22 @@ public class SecurityConfig {
 
   public static final String[] ADMIN_SPECIFIC_ROLE_URLS = {
       "/api/v1/admin",
-      "/api/v1/product",
-      "/api/v1/inventory",
+      "/api/v1/products",
+      "api/v1/dashboard",
+      "/api/v1/inventories",
       "/api/v1/charge",
       "/api/v1/currencies",
   };
-  private final CustomUserDetailsService userDetailsService;
   private final LoggingFilter loggingFilter;
-  private final JwtTokenUtil jwtTokenUtil;
   private final JwtAuthenticationProvider jwtAuthenticationProvider;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
         .csrf(AbstractHttpConfigurer::disable)
+        .sessionManagement(session ->
+            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        )
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(PUBLIC_URLS)
             .permitAll()
@@ -70,13 +70,13 @@ public class SecurityConfig {
             .hasRole("USER")
             .anyRequest().authenticated()
         )
-        .addFilterBefore(loggingFilter, UsernamePasswordAuthenticationFilter.class)
-        .addFilterBefore(new JwtAuthenticationFilter(authenticationManager(http), jwtTokenUtil),
+        .addFilterBefore(new JwtAuthenticationFilter(authenticationManager(http)),
             UsernamePasswordAuthenticationFilter.class)
-        .authenticationProvider(authenticationProvider())
+        .addFilterBefore(loggingFilter, JwtAuthenticationFilter.class)
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .exceptionHandling(eh -> eh.accessDeniedHandler(new CustomAccessDeniedHandler()))
-        .httpBasic(Customizer.withDefaults());
+        .httpBasic(AbstractHttpConfigurer::disable)
+        .anonymous(AbstractHttpConfigurer::disable);
 
     return http.build();
   }
@@ -84,23 +84,14 @@ public class SecurityConfig {
   @Bean
   public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
     return http.getSharedObject(AuthenticationManagerBuilder.class)
-        .authenticationProvider(authenticationProvider())
         .authenticationProvider(jwtAuthenticationProvider)
         .build();
   }
 
   @Bean
-  public DaoAuthenticationProvider authenticationProvider() {
-    DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-    authProvider.setUserDetailsService(userDetailsService);
-    authProvider.setPasswordEncoder(new BCryptPasswordEncoder());
-    return authProvider;
-  }
-
-  @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(List.of("http://localhost:4200"));
+    configuration.setAllowedOrigins(List.of("http://localhost:4200", "http://127.0.0.1:5173"));
     configuration.setAllowCredentials(true);
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
@@ -109,5 +100,11 @@ public class SecurityConfig {
     source.registerCorsConfiguration("/**", configuration);
     return source;
   }
+
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
+
 
 }

@@ -41,7 +41,7 @@ public class ProductCurrencyRestController {
 
   @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<Response> getAllCurrencies(
-      @RequestParam String currencyCode,
+      @RequestParam(required = false) String currencyCode,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size) {
     PageResultResponse<ProductCurrencyDTO> currencies = currencyService.getAllCurrencies(
@@ -50,7 +50,7 @@ public class ProductCurrencyRestController {
     return ApiResponseSerializer
         .successResponseSerializerBuilder()
         .withData(currencies)
-        .withStatusCode(HttpStatus.FOUND)
+        .withStatusCode(HttpStatus.OK)
         .build();
   }
 
@@ -60,7 +60,7 @@ public class ProductCurrencyRestController {
     return ApiResponseSerializer
         .successResponseSerializerBuilder()
         .withData(currency)
-        .withStatusCode(HttpStatus.FOUND)
+        .withStatusCode(HttpStatus.OK)
         .build();
   }
 

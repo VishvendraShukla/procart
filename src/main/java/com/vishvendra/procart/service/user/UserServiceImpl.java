@@ -5,10 +5,12 @@ import com.vishvendra.procart.entities.User;
 import com.vishvendra.procart.exception.ResourceNotFoundException;
 import com.vishvendra.procart.mapper.UserMapper;
 import com.vishvendra.procart.model.ProfileDetailsDTO;
+import com.vishvendra.procart.model.UserAddress;
 import com.vishvendra.procart.model.UserDTO;
 import com.vishvendra.procart.repository.ProfileDetailsRepository;
 import com.vishvendra.procart.repository.UserRepository;
 import com.vishvendra.procart.utils.hash.HashService;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -78,4 +80,31 @@ public class UserServiceImpl implements UserService {
     response.setPassword(null);
     return response;
   }
+
+  @Override
+  public UserAddress getUserAddress(User user) throws ResourceNotFoundException {
+    if (Objects.isNull(user.getProfileDetails())) {
+      throw ResourceNotFoundException.create("Please check inputted data and try again",
+          String.format("User Details for address not found by id %s", user.getId()));
+    }
+    ProfileDetails profileDetails = user.getProfileDetails();
+    UserAddress.UserAddressBuilder userAddressBuilder = UserAddress.builder();
+    if (Objects.nonNull(profileDetails.getAddress())) {
+      userAddressBuilder.address(profileDetails.getAddress());
+    }
+    if (Objects.nonNull(profileDetails.getCity())) {
+      userAddressBuilder.city(profileDetails.getCity());
+    }
+    if (Objects.nonNull(profileDetails.getCountry())) {
+      userAddressBuilder.country(profileDetails.getCountry());
+    }
+    if (Objects.nonNull(profileDetails.getState())) {
+      userAddressBuilder.state(profileDetails.getState());
+    }
+    if (Objects.nonNull(profileDetails.getPinCode())) {
+      userAddressBuilder.pinCode(profileDetails.getPinCode());
+    }
+    return userAddressBuilder.build();
+  }
+
 }

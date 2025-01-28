@@ -8,9 +8,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class JwtTokenUtil {
 
@@ -38,6 +40,7 @@ public class JwtTokenUtil {
           .parseSignedClaims(authToken);
       return true;
     } catch (JwtException | IllegalArgumentException e) {
+      log.error("JWT Token validation failed: {}", e.getMessage());
       return false;
     }
   }
