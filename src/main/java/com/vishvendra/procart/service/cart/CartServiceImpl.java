@@ -83,6 +83,7 @@ public class CartServiceImpl implements CartService {
   }
 
   @Override
+  @Transactional
   public void completeCart(CompleteCartDTO completeCartDTO) {
     User user = findLoggedUser();
     Cart cart = cartRepository.findActiveCartByUser(user, CartStatus.ACTIVE).orElseThrow(()
@@ -140,8 +141,13 @@ public class CartServiceImpl implements CartService {
 
     if (existingItem.isPresent()) {
       Items item = existingItem.get();
-      item.setQuantity(item.getQuantity() + quantity);
-    } else {
+      long updatedQuantity = item.getQuantity() + quantity;
+      if (updatedQuantity <= 0) {
+        cart.getItems().remove(item);
+      } else {
+        item.setQuantity(updatedQuantity);
+      }
+    } else if (quantity > 0) {
       Items newItem = new Items();
       newItem.setProduct(product);
       newItem.setQuantity(quantity);

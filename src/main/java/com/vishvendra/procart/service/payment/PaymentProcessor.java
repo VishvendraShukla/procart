@@ -1,6 +1,6 @@
 package com.vishvendra.procart.service.payment;
 
-public interface PaymentService {
+public interface PaymentProcessor {
 
   String createPaymentLink();
 
