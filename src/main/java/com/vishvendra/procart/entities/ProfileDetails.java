@@ -41,4 +41,7 @@ public class ProfileDetails extends AbstractEntity {
   @Column(name = "pin_code", length = 10)
   private String pinCode;
 
+  public String getBillingAddress() {
+    return String.format("%s, %s, %s, %s, %s", address, city, state, country, pinCode);
+  }
 }

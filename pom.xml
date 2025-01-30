@@ -34,6 +34,7 @@
     <jjwt-api.version>0.12.6</jjwt-api.version>
     <jjwt-impl.version>0.12.6</jjwt-impl.version>
     <jjwt-jackson.version>0.12.6</jjwt-jackson.version>
+    <stripe.version>28.3.0</stripe.version>
   </properties>
   <dependencies>
     <dependency>
@@ -119,7 +120,11 @@
       <version>1.5.2.Final</version>
       <scope>provided</scope>
     </dependency>
-
+    <dependency>
+      <groupId>com.stripe</groupId>
+      <artifactId>stripe-java</artifactId>
+      <version>${stripe.version}</version>
+    </dependency>
   </dependencies>
 
   <build>

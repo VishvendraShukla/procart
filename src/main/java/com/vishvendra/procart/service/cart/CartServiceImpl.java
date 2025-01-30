@@ -9,6 +9,7 @@ import com.vishvendra.procart.entities.User;
 import com.vishvendra.procart.event.AuditEvent;
 import com.vishvendra.procart.event.EventDispatcher;
 import com.vishvendra.procart.exception.CartAlreadyActiveException;
+import com.vishvendra.procart.exception.IllegalInputException;
 import com.vishvendra.procart.exception.InsufficientStockException;
 import com.vishvendra.procart.exception.ResourceNotFoundException;
 import com.vishvendra.procart.model.CartData;
@@ -18,10 +19,10 @@ import com.vishvendra.procart.model.UpdateCartDTO;
 import com.vishvendra.procart.repository.CartRepository;
 import com.vishvendra.procart.repository.ProductRepository;
 import com.vishvendra.procart.repository.UserRepository;
+import com.vishvendra.procart.service.charge.ChargeCalculationService;
 import com.vishvendra.procart.service.inventory.InventoryService;
 import com.vishvendra.procart.utils.PlatformSecurityContext;
 import com.vishvendra.procart.utils.securitymodel.CustomUser;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -39,6 +40,7 @@ public class CartServiceImpl implements CartService {
   private final CartRepository cartRepository;
   private final ProductRepository productRepository;
   private final UserRepository userRepository;
+  private final ChargeCalculationService chargeCalculationService;
 
   @Override
   @Transactional
@@ -65,8 +67,7 @@ public class CartServiceImpl implements CartService {
     item.setQuantity(createCartDTO.getQuantity());
     item.setPrice(returnValues.getProduct().getPrice());
     cart.setItems(List.of(item));
-    cart.setTotalPrice(BigDecimal.valueOf(createCartDTO.getQuantity())
-        .multiply(returnValues.getProduct().getPrice()));
+    cart.setTotalPrice(chargeCalculationService.calculateTotalPrice(cart));
     Cart savedCart = cartRepository.save(cart);
     eventDispatcher.dispatchEvent(
         new AuditEvent("Cart Created", returnValues.getUser().getUsername(),
@@ -135,6 +136,17 @@ public class CartServiceImpl implements CartService {
       cartRepository.save(cart);
     }
 
+    cart.getItems()
+        .stream()
+        .filter(item -> !item.getProduct().getCurrency().getCode()
+            .equalsIgnoreCase(product.getCurrency().getCode()))
+        .findFirst().ifPresent(item -> {
+              throw IllegalInputException.create(
+                  "Incorrect currency",
+                  "Currency mismatch between cart and product");
+            }
+        );
+
     Optional<Items> existingItem = cart.getItems().stream()
         .filter(item -> item.getProduct().equals(product))
         .findFirst();
@@ -155,9 +167,7 @@ public class CartServiceImpl implements CartService {
       cart.getItems().add(newItem);
     }
 
-    cart.setTotalPrice(cart.getItems().stream()
-        .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
-        .reduce(BigDecimal.ZERO, BigDecimal::add));
+    cart.setTotalPrice(chargeCalculationService.calculateTotalPrice(cart));
     Cart savedCart = cartRepository.save(cart);
     eventDispatcher.dispatchEvent(
         new AuditEvent(message, user.getUsername(), auditAction));

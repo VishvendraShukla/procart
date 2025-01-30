@@ -14,6 +14,7 @@ import com.vishvendra.procart.model.PageResultResponse;
 import com.vishvendra.procart.repository.ChargeRepository;
 import com.vishvendra.procart.utils.PlatformSecurityContext;
 import java.util.Arrays;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -44,6 +45,12 @@ public class ChargeServiceImpl implements ChargeService {
         displayName);
     Page<Charge> charges = chargeRepository.findAll(chargeSpecification, pageRequest);
     return mapToDTOList(charges);
+  }
+
+  @Override
+  public List<ChargeDTO> findChargesByAppliesOn(ChargeAppliesOn chargeAppliesOn) {
+    List<Charge> charges = chargeRepository.findByChargeAppliesOn(chargeAppliesOn);
+    return charges.stream().map(chargeMapper::toDTO).toList();
   }
 
   private PageResultResponse<ChargeDTO> mapToDTOList(Page<Charge> charges) {

@@ -36,7 +36,10 @@ public class Transaction extends AbstractEntity {
   @Column(name = "external_reference_id", unique = true)
   private String referenceId;
 
-  @Column(name = "external_reference_name", unique = true)
+  @Column(name = "trace_id", unique = true)
+  private String traceId;
+
+  @Column(name = "external_reference_name")
   private String referenceName;
 
   @Column(name = "description", length = 200)

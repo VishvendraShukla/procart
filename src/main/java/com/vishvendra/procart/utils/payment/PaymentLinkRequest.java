@@ -9,8 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class PaymentLinkResponse<R> {
+public class PaymentLinkRequest<T> {
 
-  private String paymentLink;
-  private R otherData;
+  private T linkRequest;
 }

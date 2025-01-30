@@ -1,4 +1,4 @@
-package com.vishvendra.procart.utils.payment;
+package com.vishvendra.procart.utils.payment.stripe;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,8 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class PaymentLinkResponse<R> {
+public class StripePaymentLinkResponse {
 
-  private String paymentLink;
-  private R otherData;
+  private String paymentLinkReferenceId;
 }

@@ -39,6 +39,7 @@ public class SecurityConfig {
       "/api/v1/user",
       "/api/v1/cart",
       "/api/v1/cart/complete",
+      "/api/v1/orders"
   };
 
   public static final String[] ADMIN_SPECIFIC_ROLE_URLS = {

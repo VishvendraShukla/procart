@@ -9,8 +9,8 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class PaymentLinkResponse<R> {
+public class Webhook<WE> {
 
-  private String paymentLink;
-  private R otherData;
+  private WE webhookResponse;
+
 }
