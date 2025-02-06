@@ -1,36 +1,49 @@
 package com.vishvendra.procart.service.payment.stripe;
 
 import com.stripe.Stripe;
-import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
+import com.stripe.model.StripeObject;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
+import com.vishvendra.procart.entities.Transaction;
+import com.vishvendra.procart.entities.TransactionStatus;
 import com.vishvendra.procart.exception.PaymentException;
+import com.vishvendra.procart.service.configuration.ConfigurationService;
 import com.vishvendra.procart.service.payment.PaymentProcessor;
+import com.vishvendra.procart.service.transaction.TransactionService;
 import com.vishvendra.procart.utils.payment.PaymentLinkRequest;
 import com.vishvendra.procart.utils.payment.PaymentLinkResponse;
 import com.vishvendra.procart.utils.payment.Webhook;
+import com.vishvendra.procart.utils.payment.stripe.StripeCheckoutSessionWebhookResponse;
 import com.vishvendra.procart.utils.payment.stripe.StripePaymentLinkRequest;
 import com.vishvendra.procart.utils.payment.stripe.StripePaymentLinkResponse;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 @Service("stripePaymentProcessor")
 @RequiredArgsConstructor
 @Slf4j
 public class StripePaymentProcessor implements
-    PaymentProcessor<StripePaymentLinkRequest, StripePaymentLinkResponse, String> {
+    PaymentProcessor<StripePaymentLinkRequest, StripePaymentLinkResponse, StripeCheckoutSessionWebhookResponse> {
+
+  private final TransactionService transactionService;
+  private final ConfigurationService configurationService;
+  private String stripeApiKey;
+  private String stripeWebhookSecret;
 
   @Override
   public PaymentLinkResponse<StripePaymentLinkResponse> createPaymentLink(
       PaymentLinkRequest<StripePaymentLinkRequest> tPaymentLinkRequest) throws PaymentException {
-    Stripe.apiKey = "sk_test_51QmA77EnE7fi09wISJNSQO3QRJSE0LCWxdymUd4k343HUD3rI1MzXoRD3w94rfpJMSz2lLLHdfdXbI7PalxRqLEv00H9CEKvPQ";
+    if (Objects.isNull(this.stripeApiKey)) {
+      initiateData();
+    }
+    Stripe.apiKey = this.stripeApiKey;
     try {
       PaymentLinkResponse<StripePaymentLinkResponse> response = new PaymentLinkResponse<>();
       Session session = createCheckout(tPaymentLinkRequest.getLinkRequest());
@@ -77,17 +90,45 @@ public class StripePaymentProcessor implements
   }
 
   @Override
-  public void handleWebhook(Webhook<String> webhookResponse) {
-//    Event event;
-//
-//    try {
-//      event = com.stripe.net.Webhook.constructEvent(payload, sigHeader, webhookSecret);
-//      Session session = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
-//      assert session != null;
-//      final String status = session.getStatus();
-//    } catch (SignatureVerificationException e) {
-//      log.error("Webhook signature verification failed.", e);
-//    }
-//
+  public void handleWebhook(Webhook<StripeCheckoutSessionWebhookResponse> webhookResponse)
+      throws Exception {
+    if (Objects.isNull(this.stripeApiKey)) {
+      initiateData();
+    }
+    Stripe.apiKey = this.stripeApiKey;
+    String payload = webhookResponse.getWebhookResponse().getPayload();
+    String sigHeader = webhookResponse.getWebhookResponse().getSigHeader();
+    Event event = com.stripe.net.Webhook.constructEvent(
+        payload, sigHeader, this.stripeWebhookSecret
+    );
+    log.info("Event: {}", event.getType());
+    log.info("RequestBody: {}", payload);
+    if ("checkout.session.completed".equalsIgnoreCase(event.getType()) ||
+        "checkout.session.async_payment_succeeded".equalsIgnoreCase(event.getType())) {
+      Optional<StripeObject> stripeObjectOptional = (Optional<StripeObject>) event.getDataObjectDeserializer()
+          .getObject();
+      if (stripeObjectOptional.isPresent()) {
+        Session session = (Session) stripeObjectOptional.get();
+        Transaction transaction = transactionService.getTransactionByReferenceId(session.getId());
+        transaction.setStatus(TransactionStatus.COMPLETED);
+        transactionService.updateTransaction(transaction);
+      }
+    } else if ("checkout.session.expired".equalsIgnoreCase(event.getType()) ||
+        "checkout.session.async_payment_failed".equalsIgnoreCase(event.getType())) {
+      Optional<StripeObject> stripeObjectOptional = (Optional<StripeObject>) event.getDataObjectDeserializer()
+          .getObject();
+      if (stripeObjectOptional.isPresent()) {
+        Session session = (Session) stripeObjectOptional.get();
+        Transaction transaction = transactionService.getTransactionByReferenceId(session.getId());
+        transaction.setStatus(TransactionStatus.FAILED);
+        transactionService.updateTransaction(transaction);
+      }
+    }
+  }
+
+  private void initiateData() {
+    this.stripeApiKey = this.configurationService.getConfiguration("STRIPE_API_KEY").getValue();
+    this.stripeWebhookSecret = this.configurationService.getConfiguration("STRIPE_WEBHOOK_SECRET")
+        .getValue();
   }
 }

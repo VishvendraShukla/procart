@@ -9,4 +9,6 @@ public interface TransactionService {
 
   Transaction updateTransaction(Transaction transaction);
 
+  Transaction getTransactionByReferenceId(String referenceId);
+
 }

@@ -32,6 +32,7 @@ public class SecurityConfig {
   public static final String[] PUBLIC_URLS = {
       "/public/**",
       "/api/v1/authenticate",
+      "/api/v1/webhook/stripe",
       "/error"
   };
 
@@ -46,6 +47,8 @@ public class SecurityConfig {
       "/api/v1/admin",
       "/api/v1/products",
       "/api/v1/dashboard",
+      "/api/v1/dashboard/users",
+      "/api/v1/configuration",
       "/api/v1/auditlogs",
       "/api/v1/inventories",
       "/api/v1/charge",

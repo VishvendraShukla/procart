@@ -7,8 +7,9 @@ import com.vishvendra.procart.utils.payment.Webhook;
 
 public interface PaymentProcessor<RE, RP, WE> {
 
-  PaymentLinkResponse<RP> createPaymentLink(PaymentLinkRequest<RE> tPaymentLinkRequest) throws PaymentException;
+  PaymentLinkResponse<RP> createPaymentLink(PaymentLinkRequest<RE> tPaymentLinkRequest)
+      throws PaymentException;
 
-  void handleWebhook(Webhook<WE> webhookResponse);
+  void handleWebhook(Webhook<WE> webhookResponse) throws Exception;
 
 }

@@ -40,4 +40,9 @@ public class TransactionServiceImpl implements TransactionService {
   public Transaction updateTransaction(Transaction transaction) {
     return transactionRepository.save(transaction);
   }
+
+  @Override
+  public Transaction getTransactionByReferenceId(String referenceId) {
+    return this.transactionRepository.findByReferenceId(referenceId);
+  }
 }
