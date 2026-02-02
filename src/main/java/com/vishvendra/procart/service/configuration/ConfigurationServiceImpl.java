@@ -23,7 +23,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
   private final ConfigurationRepository configurationRepository;
 
   @Override
-  @Cacheable(value = "configurations", key = "#key", unless = "#result == null")
+  @Cacheable(
+      value = "configurations", 
+      key = "#key", 
+      condition = "#key != null",
+      unless = "#result == null"
+  )
   public PageResultResponse<ConfigurationDTO> getConfiguration(String key,
       PageRequest pageRequest) {
     if (Objects.isNull(key)) {
